@@ -1,11 +1,15 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_PATH = "${WORKSPACE}/venv"
+    }
+
     stages {
         stage('Clone Repo') {
             steps {
                 echo '📥 Cloning GitHub Repository...'
-                git 'https://github.com/SnehalBidave/flask-jenkins-cicd.git'
+                git branch: 'main', url: 'https://github.com/SnehalBidave/flask-jenkins-cicd.git'
             }
         }
 
@@ -13,8 +17,10 @@ pipeline {
             steps {
                 echo '🐍 Setting up Python virtual environment...'
                 sh '''
-                    python3 -m venv venv
-                    bash -c "source venv/bin/activate && pip install -r requirements.txt && pip install gunicorn"
+                    python3 -m venv $VENV_PATH
+                    $VENV_PATH/bin/pip install --upgrade pip
+                    $VENV_PATH/bin/pip install -r requirements.txt
+                    $VENV_PATH/bin/pip install gunicorn
                 '''
             }
         }
@@ -22,7 +28,7 @@ pipeline {
         stage('Stop Previous App') {
             steps {
                 echo '🛑 Stopping previous Gunicorn processes (if any)...'
-                sh 'pkill gunicorn || true'
+                sh 'pkill -f gunicorn || true'
             }
         }
 
@@ -30,7 +36,7 @@ pipeline {
             steps {
                 echo '🚀 Running Flask app with Gunicorn...'
                 sh '''
-                    bash -c "source venv/bin/activate && nohup gunicorn -w 4 -b 0.0.0.0:8000 app:app &"
+                    nohup $VENV_PATH/bin/gunicorn -w 4 -b 0.0.0.0:8000 app:app > gunicorn.log 2>&1 &
                 '''
             }
         }
