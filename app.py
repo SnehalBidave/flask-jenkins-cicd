@@ -16,7 +16,7 @@ def hello():
     app.logger.info("✅ Root endpoint accessed from Jenkins deployment")
     return "✅ Hello from Jenkins CI/CD Pipeline! Deployed Successfully via Gunicorn."
 
-# Only for development server use
+# Only for development server use (not used with Gunicorn)
 if __name__ == "__main__":
     app.logger.info("🚀 Starting Flask development server...")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000)
