@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        FLASK_PORT = '5000'
+        FLASK_PORT = '8000'
+        VENV_PATH = "${WORKSPACE}/venv"
     }
 
     stages {
@@ -13,34 +14,36 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Python Environment') {
             steps {
-                echo "📦 Installing Python and Flask dependencies..."
+                echo "🐍 Setting up Python virtual environment..."
                 sh '''
-                    apt update
-                    apt install -y python3-pip
-                    pip3 install --upgrade pip
-                    pip3 install -r requirements.txt
+                    sudo apt update && sudo apt install -y python3-venv
+                    python3 -m venv $VENV_PATH
+                    source $VENV_PATH/bin/activate
+                    $VENV_PATH/bin/pip install --upgrade pip
+                    $VENV_PATH/bin/pip install -r requirements.txt
+                    $VENV_PATH/bin/pip install gunicorn
                 '''
             }
         }
 
-        stage('Stop Previous App (if running)') {
+        stage('Stop Previous App') {
             steps {
-                echo "🛑 Stopping any previously running Flask apps..."
+                echo "🛑 Stopping any existing Gunicorn process..."
                 sh '''
-                    pkill -f app.py || true
+                    pkill gunicorn || true
                 '''
             }
         }
 
-        stage('Run Flask App') {
+        stage('Run Flask App with Gunicorn') {
             steps {
-                echo "🚀 Starting Flask app..."
+                echo "🚀 Starting Flask app using Gunicorn..."
                 sh '''
-                    nohup python3 app.py > output.log 2>&1 &
-                    sleep 3
-                    echo "✅ Flask app started on port $FLASK_PORT"
+                    source $VENV_PATH/bin/activate
+                    nohup $VENV_PATH/bin/gunicorn -w 4 -b 0.0.0.0:$FLASK_PORT app:app > gunicorn.log 2>&1 &
+                    sleep 5
                 '''
             }
         }
