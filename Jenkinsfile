@@ -3,6 +3,9 @@ pipeline {
 
     environment {
         VENV_PATH = "${WORKSPACE}/venv"
+        FLASK_APP_MODULE = "app:app"
+        FLASK_PORT = "8000"
+        LOG_FILE = "gunicorn.log"
     }
 
     stages {
@@ -17,10 +20,10 @@ pipeline {
             steps {
                 echo '🐍 Setting up Python virtual environment...'
                 sh '''
-                    python3 -m venv $VENV_PATH
-                    $VENV_PATH/bin/pip install --upgrade pip
-                    $VENV_PATH/bin/pip install -r requirements.txt
-                    $VENV_PATH/bin/pip install gunicorn
+                    python3 -m venv "$VENV_PATH"
+                    source "$VENV_PATH/bin/activate"
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                 '''
             }
         }
@@ -36,7 +39,8 @@ pipeline {
             steps {
                 echo '🚀 Running Flask app with Gunicorn...'
                 sh '''
-                    nohup $VENV_PATH/bin/gunicorn -w 4 -b 0.0.0.0:8000 app:app > gunicorn.log 2>&1 &
+                    source "$VENV_PATH/bin/activate"
+                    nohup gunicorn -w 4 -b 0.0.0.0:$FLASK_PORT $FLASK_APP_MODULE > $LOG_FILE 2>&1 &
                 '''
             }
         }
