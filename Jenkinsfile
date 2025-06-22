@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        VENV_DIR = "${WORKSPACE}/venv"
-    }
-
     stages {
         stage('Clone Repo') {
             steps {
@@ -17,27 +13,24 @@ pipeline {
             steps {
                 echo '🐍 Setting up Python virtual environment...'
                 sh '''
-                    python3 -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    python3 -m venv venv
+                    bash -c "source venv/bin/activate && pip install -r requirements.txt && pip install gunicorn"
                 '''
             }
         }
 
         stage('Stop Previous App') {
             steps {
-                echo '🛑 Stopping previous app (if running)...'
-                sh 'pkill -f gunicorn || true'
+                echo '🛑 Stopping previous Gunicorn processes (if any)...'
+                sh 'pkill gunicorn || true'
             }
         }
 
         stage('Run Flask App with Gunicorn') {
             steps {
-                echo '🚀 Starting Flask app using Gunicorn...'
+                echo '🚀 Running Flask app with Gunicorn...'
                 sh '''
-                    . ${VENV_DIR}/bin/activate
-                    nohup gunicorn -w 4 -b 0.0.0.0:8000 app:app > gunicorn.log 2>&1 &
+                    bash -c "source venv/bin/activate && nohup gunicorn -w 4 -b 0.0.0.0:8000 app:app &"
                 '''
             }
         }
@@ -48,7 +41,7 @@ pipeline {
             echo '❌ CI/CD pipeline failed. Please check the console logs.'
         }
         success {
-            echo '✅ CI/CD pipeline completed successfully.'
+            echo '✅ CI/CD pipeline completed successfully!'
         }
     }
 }
