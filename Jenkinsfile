@@ -9,7 +9,7 @@ pipeline {
         stage('Clone Repo') {
             steps {
                 echo "📥 Cloning GitHub Repository..."
-                git 'https://github.com/SnehalBidave/flask-jenkins-cicd.git'
+                git branch: 'main', url: 'https://github.com/SnehalBidave/flask-jenkins-cicd.git'
             }
         }
 
