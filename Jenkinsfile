@@ -19,8 +19,8 @@ pipeline {
                 echo '🐍 Setting up Python virtual environment...'
                 sh '''
                     #!/bin/bash
-                    python3 -m venv venv
-                    . venv/bin/activate
+                    python3 -m venv ${VENV_PATH}
+                    . ${VENV_PATH}/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
@@ -41,8 +41,9 @@ pipeline {
                 echo '🚀 Launching Flask app with Gunicorn...'
                 sh '''
                     #!/bin/bash
-                    . venv/bin/activate
-                    nohup gunicorn -w 4 -b 0.0.0.0:${APP_PORT} app:app &
+                    . ${VENV_PATH}/bin/activate
+                    nohup gunicorn -w 4 -b 0.0.0.0:${APP_PORT} app:app > gunicorn.log 2>&1 &
+                    disown
                 '''
             }
         }
