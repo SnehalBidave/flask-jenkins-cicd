@@ -26,21 +26,12 @@ pipeline {
             }
         }
 
-        stage('Stop Previous App') {
+        stage('Restart Flask App') {
             steps {
-                echo '🛑 Stopping any existing Gunicorn process...'
+                echo '🔁 Restarting Gunicorn via systemd...'
                 sh '''
-                    pkill -f "gunicorn" || true
-                '''
-            }
-        }
-
-        stage('Run Flask App with Gunicorn') {
-            steps {
-                echo '🚀 Launching Flask app with Gunicorn...'
-                sh '''
-                    . ${VENV_PATH}/bin/activate
-                    setsid gunicorn -w 4 -b 0.0.0.0:${APP_PORT} app:app > gunicorn.log 2>&1 < /dev/null &
+                    sudo systemctl restart gunicorn-flask
+                    sudo systemctl status gunicorn-flask --no-pager
                 '''
             }
         }
